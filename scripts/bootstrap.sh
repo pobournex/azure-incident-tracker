@@ -90,7 +90,7 @@ Done. Add these as GitHub repository VARIABLES (Settings > Secrets and variables
 And these as repository SECRETS:
   ADMIN_SSH_PUBLIC_KEY   = contents of your .pub key
   ANSIBLE_SSH_PRIVATE_KEY= matching private key (used by the deploy workflow)
-  ANSIBLE_VAULT_PASSWORD = password for ansible/inventory/group_vars/all/vault.yml
+  DB_PASSWORD = database password, letters and digits only
 
 Create GitHub Environments named: azure-apply, azure-destroy, azure-deploy (add yourself as required reviewer on azure-apply and azure-destroy).
 EOF

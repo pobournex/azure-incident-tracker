@@ -77,14 +77,14 @@ jobs:
           # Give the rule a moment to take effect
           sleep 30
 
-      - name: Prepare SSH key and vault password
+      - name: Prepare SSH key and database password
         env:
           SSH_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
-          VAULT_PASS: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           umask 077
           printf '%s\n' "$SSH_KEY" > "$RUNNER_TEMP/ansible_key"
-          printf '%s' "$VAULT_PASS" > "$RUNNER_TEMP/vault_pass"
+          printf 'vault_db_password: "%s"\n' "$DB_PASSWORD" > "$RUNNER_TEMP/db_vars.yml"
 
       - name: Wait for SSH on every VM
         working-directory: ansible
@@ -96,8 +96,7 @@ jobs:
         working-directory: ansible
         env:
           ANSIBLE_PRIVATE_KEY_FILE: ${{ runner.temp }}/ansible_key
-          ANSIBLE_VAULT_PASSWORD_FILE: ${{ runner.temp }}/vault_pass
-        run: ansible-playbook site.yml
+        run: ansible-playbook site.yml -e "@$RUNNER_TEMP/db_vars.yml"
 
       - name: Smoke test
         run: |
@@ -116,4 +115,4 @@ jobs:
               az network nsg rule delete --resource-group "$APP_RG" --nsg-name "$nsg" --name "$SSH_RULE_NAME" -o none || true
             done
           fi
-          rm -f "$RUNNER_TEMP/ansible_key" "$RUNNER_TEMP/vault_pass"
+          rm -f "$RUNNER_TEMP/ansible_key" "$RUNNER_TEMP/db_vars.yml"

@@ -56,8 +56,8 @@ Prerequisites: Azure CLI, Git, an SSH key pair for the VMs, and a private GitHub
    GH_REPO=<owner>/<repo> ./scripts/bootstrap.sh
    ```
    It creates the state storage account, an Entra app with GitHub OIDC federated credentials, and role assignments, then prints the values to configure in GitHub.
-2. **Configure GitHub:** add the printed repository *variables*, add the *secrets* (`ADMIN_SSH_PUBLIC_KEY`, `ANSIBLE_SSH_PRIVATE_KEY`, `ANSIBLE_VAULT_PASSWORD`), and create the environments `azure-apply`, `azure-destroy` and `azure-deploy` (require your approval on apply and destroy).
-3. **Create the vault file and commit it encrypted:**
+2. **Configure GitHub:** add the printed repository *variables*, add the *secrets* (`ADMIN_SSH_PUBLIC_KEY`, `ANSIBLE_SSH_PRIVATE_KEY`, `DB_PASSWORD`), and create the environments `azure-apply`, `azure-destroy` and `azure-deploy` (require your approval on apply and destroy).
+3. **Database password.** The deploy workflow passes the `DB_PASSWORD` secret to Ansible as an extra variable (letters and digits only, because it is placed in a SQL statement). To keep the password in the repo instead, use Ansible Vault:
    ```bash
    cp ansible/inventory/group_vars/all/vault.yml.example ansible/inventory/group_vars/all/vault.yml
    # edit the password, then:
