@@ -26,7 +26,7 @@ flowchart LR
 - Infrastructure as code with remote state in Azure Storage (Entra auth, no storage keys).
 - Network segmentation: separate subnets and NSGs per tier; the app is reachable only from the web tier.
 - Idempotent configuration management with Ansible roles (`common`, `node_exporter`, `postgres`, `app`, `nginx_web`).
-- Keyless CI/CD: GitHub OIDC federation, plan on pull request, human-approved apply, manual destroy.
+- Keyless CI/CD: GitHub OIDC federation, plan on pull request, manually triggered apply, manual destroy.
 - Cost controls: small B-series VMs, nightly auto-shutdown, budget alerts, one-command teardown.
 
 ## Layout
@@ -63,7 +63,7 @@ Prerequisites: Azure CLI, Git, an SSH key pair for the VMs, and a private GitHub
    # edit the password, then:
    ansible-vault encrypt ansible/inventory/group_vars/all/vault.yml
    ```
-4. **Provision:** open a pull request to see `terraform plan`, merge, then approve the `apply` job.
+4. **Provision:** open a pull request to see `terraform plan`, merge, then start the `terraform` workflow by hand (Run workflow) to apply.
 5. **Deploy:** run the `deploy` workflow. It generates the inventory from Terraform outputs, runs the playbook and smoke-tests `/healthz` through the web tier.
 6. **Tear down:** run the `destroy` workflow and type `destroy`.
 

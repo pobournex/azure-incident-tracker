@@ -69,9 +69,10 @@ jobs:
           retention-days: 3
 
   apply:
-    # Runs only after a human approves the 'azure-apply' environment.
+    # Applies only when started by hand (Actions > terraform > Run workflow).
+    # Plans on pull requests and pushes never change infrastructure.
     needs: plan
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: azure-apply
     steps:
