@@ -92,4 +92,4 @@ Three small VMs, three Standard public IPs and three small disks. Approximate li
 
 ## Status
 
-Written and linted (`yamllint`, `ansible-lint` production profile, Ansible syntax check, app tests) but **not yet applied to a real Azure subscription**. Items to confirm on the first run: VM size availability in your region (Standard_B1s was unavailable in centralus, so the stack uses Standard_B2ats_v2), the Ubuntu 22.04 image reference, and the bootstrap script.
+Written and linted (`yamllint`, `ansible-lint` production profile, Ansible syntax check, app tests) but **not yet applied to a real Azure subscription**. Items to confirm on the first run: VM size availability in your region (Standard_B1s had no capacity and the newer B-series had no quota in centralus on this subscription, so the stack uses Standard_D2ls_v6), the Ubuntu 22.04 image reference, and the bootstrap script.

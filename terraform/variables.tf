@@ -67,8 +67,8 @@ variable "vms" {
     subnet = string
   }))
   default = {
-    web = { tier = "web", size = "Standard_B2ats_v2", subnet = "web" }
-    app = { tier = "app", size = "Standard_B2ats_v2", subnet = "private" }
-    db  = { tier = "db", size = "Standard_B2ats_v2", subnet = "private" }
+    web = { tier = "web", size = "Standard_D2ls_v6", subnet = "web" }
+    app = { tier = "app", size = "Standard_D2ls_v6", subnet = "private" }
+    db  = { tier = "db", size = "Standard_D2ls_v6", subnet = "private" }
   }
 }
