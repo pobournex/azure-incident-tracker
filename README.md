@@ -41,14 +41,14 @@ scripts/      bootstrap.sh (state + OIDC), gen_inventory.py
 
 ## Design notes and trade-offs
 
-- **Public IPs on every VM.** New Azure VNets may not provide default outbound internet access, and a NAT gateway costs far more than this lab. So each VM gets a public IP, but NSGs block all inbound traffic except HTTP/HTTPS to the web tier and SSH from one admin IP. Set `public_ip_for_private_tier = false` and add a NAT gateway for a stricter production-style layout.
-- **Self-hosted runner for the deploy job.** Ansible needs SSH access, and the NSGs only allow `ALLOWED_SSH_CIDR`. The deploy workflow therefore runs on a self-hosted runner whose public IP is that address (the homelab runner). Terraform workflows run on GitHub-hosted runners because they only call the Azure API.
+- **Public IPs on every VM.** New Azure VNets may not provide default outbound internet access, and a NAT gateway costs far more than this lab. So each VM gets a public IP, but NSGs block all inbound traffic except HTTP/HTTPS to the web tier and there is no standing SSH rule (see the next note). Set `public_ip_for_private_tier = false` and add a NAT gateway for a stricter production-style layout.
+- **Deploy from a GitHub-hosted runner with a temporary SSH rule.** Ansible needs SSH, and GitHub runners have a different IP every run. The deploy job looks up its own IP, adds an NSG rule allowing SSH from that single address, runs Ansible, and always removes the rule afterwards (even on failure). No home IP is stored anywhere: `allowed_ssh_cidr` defaults to empty, so there is no standing SSH rule. To log in by hand, run `./scripts/ssh-window.sh open` (it looks up your current IP at run time) and `close` when you are done.
 - **PostgreSQL on a VM, not the managed service**, to keep cost down. The app reads `DATABASE_URL`, so switching to Azure Database for PostgreSQL later only changes the env file.
 - **Tables are created on app start** (`db.create_all()`). Fine for a demo; use migrations for real data.
 
 ## Setup runbook
 
-Prerequisites: Azure CLI, Git, an SSH key pair for the VMs, a private GitHub repo, and a self-hosted GitHub runner (Linux) on a network whose public IP you know.
+Prerequisites: Azure CLI, Git, an SSH key pair for the VMs, and a private GitHub repo.
 
 1. **Bootstrap Azure** (once):
    ```bash

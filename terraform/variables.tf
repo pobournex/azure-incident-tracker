@@ -16,12 +16,13 @@ variable "environment" {
 }
 
 variable "allowed_ssh_cidr" {
-  description = "Your public IP in CIDR form (for example 203.0.113.7/32). SSH is only allowed from here."
+  description = "Optional standing SSH allow rule for one IP in CIDR form. Leave empty (the default) to keep SSH closed; the deploy workflow opens a temporary rule instead."
   type        = string
+  default     = ""
 
   validation {
-    condition     = can(cidrhost(var.allowed_ssh_cidr, 0)) && var.allowed_ssh_cidr != "0.0.0.0/0"
-    error_message = "allowed_ssh_cidr must be a valid CIDR and must not be 0.0.0.0/0."
+    condition     = var.allowed_ssh_cidr == "" || (can(cidrhost(var.allowed_ssh_cidr, 0)) && var.allowed_ssh_cidr != "0.0.0.0/0")
+    error_message = "allowed_ssh_cidr must be empty or a valid CIDR, and must not be 0.0.0.0/0."
   }
 }
 

@@ -4,9 +4,14 @@ name: deploy
 on:
   workflow_dispatch:
 
+# OIDC: the job exchanges a GitHub token for an Azure token. No stored cloud secrets.
 permissions:
   id-token: write
   contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
 
 env:
   ARM_USE_OIDC: "true"
@@ -18,21 +23,33 @@ env:
   TF_VAR_admin_ssh_public_key: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
   TFSTATE_RG: ${{ vars.TFSTATE_RESOURCE_GROUP }}
   TFSTATE_SA: ${{ vars.TFSTATE_STORAGE_ACCOUNT }}
+  SSH_RULE_NAME: allow-ssh-ci-runner
 
 jobs:
   deploy:
-    # Self-hosted: the homelab runner's public IP is the one allowed through the
-    # VM firewalls (ALLOWED_SSH_CIDR). GitHub-hosted runners have changing IPs.
-    runs-on: [self-hosted, linux]
+    # GitHub-hosted runner: its IP changes every run, so the job opens SSH to that
+    # single IP for the duration of the deploy and always removes the rule afterwards.
+    runs-on: ubuntu-latest
     environment: azure-deploy
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
 
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
       - name: Install Ansible
-        run: python3 -m pip install --user ansible-core
+        run: python3 -m pip install ansible-core
 
       - name: Generate inventory from Terraform outputs
         run: |
@@ -43,6 +60,22 @@ jobs:
             -backend-config="key=incident-tracker.tfstate"
           terraform -chdir=terraform output -json vms | python3 scripts/gen_inventory.py > ansible/inventory/hosts.yml
           echo "WEB_URL=$(terraform -chdir=terraform output -raw app_url)" >> "$GITHUB_ENV"
+          echo "APP_RG=$(terraform -chdir=terraform output -raw resource_group)" >> "$GITHUB_ENV"
+
+      - name: Open SSH to this runner's IP only
+        run: |
+          RUNNER_IP="$(curl -fsS https://api.ipify.org)"
+          echo "::add-mask::$RUNNER_IP"
+          for nsg in $(az network nsg list --resource-group "$APP_RG" --query "[].name" -o tsv); do
+            az network nsg rule create \
+              --resource-group "$APP_RG" --nsg-name "$nsg" \
+              --name "$SSH_RULE_NAME" --priority 200 \
+              --direction Inbound --access Allow --protocol Tcp \
+              --destination-port-ranges 22 \
+              --source-address-prefixes "$RUNNER_IP/32" -o none
+          done
+          # Give the rule a moment to take effect
+          sleep 30
 
       - name: Prepare SSH key and vault password
         env:
@@ -57,14 +90,14 @@ jobs:
         working-directory: ansible
         env:
           ANSIBLE_PRIVATE_KEY_FILE: ${{ runner.temp }}/ansible_key
-        run: ~/.local/bin/ansible all -m ansible.builtin.wait_for_connection -a "timeout=300"
+        run: ansible all -m ansible.builtin.wait_for_connection -a "timeout=300"
 
       - name: Run the playbook
         working-directory: ansible
         env:
           ANSIBLE_PRIVATE_KEY_FILE: ${{ runner.temp }}/ansible_key
           ANSIBLE_VAULT_PASSWORD_FILE: ${{ runner.temp }}/vault_pass
-        run: ~/.local/bin/ansible-playbook site.yml
+        run: ansible-playbook site.yml
 
       - name: Smoke test
         run: |
@@ -75,6 +108,12 @@ jobs:
           echo "Smoke test failed" >&2
           exit 1
 
-      - name: Clean up key material
+      - name: Close SSH and clean up key material
         if: always()
-        run: rm -f "$RUNNER_TEMP/ansible_key" "$RUNNER_TEMP/vault_pass"
+        run: |
+          if [ -n "${APP_RG:-}" ]; then
+            for nsg in $(az network nsg list --resource-group "$APP_RG" --query "[].name" -o tsv); do
+              az network nsg rule delete --resource-group "$APP_RG" --nsg-name "$nsg" --name "$SSH_RULE_NAME" -o none || true
+            done
+          fi
+          rm -f "$RUNNER_TEMP/ansible_key" "$RUNNER_TEMP/vault_pass"

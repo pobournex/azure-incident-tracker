@@ -85,7 +85,7 @@ Done. Add these as GitHub repository VARIABLES (Settings > Secrets and variables
   AZURE_SUBSCRIPTION_ID  = $SUB_ID
   TFSTATE_RESOURCE_GROUP = $STATE_RG
   TFSTATE_STORAGE_ACCOUNT= $STATE_SA
-  ALLOWED_SSH_CIDR       = <your public IP>/32
+  (optional) ALLOWED_SSH_CIDR = leave unset to keep SSH closed; deploys open a temporary rule
 
 And these as repository SECRETS:
   ADMIN_SSH_PUBLIC_KEY   = contents of your .pub key

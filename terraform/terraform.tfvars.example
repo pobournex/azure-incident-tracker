@@ -1,5 +1,5 @@
 # Copy to terraform.tfvars (gitignored). In CI these come from repository variables and secrets.
 subscription_id      = "00000000-0000-0000-0000-000000000000"
-allowed_ssh_cidr     = "203.0.113.7/32"   # your public IP, from https://ifconfig.me
+# allowed_ssh_cidr = "203.0.113.7/32"   # optional: standing SSH rule for one IP. Leave unset to keep SSH closed.
 admin_ssh_public_key = "ssh-ed25519 AAAA... you@laptop"
 location             = "centralus"

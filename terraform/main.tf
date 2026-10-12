@@ -55,16 +55,20 @@ resource "azurerm_network_security_group" "web" {
     destination_address_prefix = "*"
   }
 
-  security_rule {
-    name                       = "allow-ssh-from-admin"
-    priority                   = 110
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = var.allowed_ssh_cidr
-    destination_address_prefix = "*"
+  # Standing SSH rule only if allowed_ssh_cidr is set; otherwise SSH stays closed.
+  dynamic "security_rule" {
+    for_each = var.allowed_ssh_cidr == "" ? [] : [var.allowed_ssh_cidr]
+    content {
+      name                       = "allow-ssh-from-admin"
+      priority                   = 110
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = security_rule.value
+      destination_address_prefix = "*"
+    }
   }
 
   security_rule {
@@ -86,16 +90,20 @@ resource "azurerm_network_security_group" "private" {
   resource_group_name = azurerm_resource_group.main.name
   tags                = local.tags
 
-  security_rule {
-    name                       = "allow-ssh-from-admin"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = var.allowed_ssh_cidr
-    destination_address_prefix = "*"
+  # Standing SSH rule only if allowed_ssh_cidr is set; otherwise SSH stays closed.
+  dynamic "security_rule" {
+    for_each = var.allowed_ssh_cidr == "" ? [] : [var.allowed_ssh_cidr]
+    content {
+      name                       = "allow-ssh-from-admin"
+      priority                   = 100
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "22"
+      source_address_prefix      = security_rule.value
+      destination_address_prefix = "*"
+    }
   }
 
   # Only the web tier may reach the app (gunicorn on 8000).
