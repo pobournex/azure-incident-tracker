@@ -4,7 +4,7 @@ variable "subscription_id" {
 }
 
 variable "location" {
-  description = "Azure region. Pick one where Standard_B1s is available to you."
+  description = "Azure region. Pick one where the VM size below is available to your subscription (check with az vm list-skus)."
   type        = string
   default     = "centralus"
 }
@@ -67,8 +67,8 @@ variable "vms" {
     subnet = string
   }))
   default = {
-    web = { tier = "web", size = "Standard_B1s", subnet = "web" }
-    app = { tier = "app", size = "Standard_B1s", subnet = "private" }
-    db  = { tier = "db", size = "Standard_B1s", subnet = "private" }
+    web = { tier = "web", size = "Standard_B2ats_v2", subnet = "web" }
+    app = { tier = "app", size = "Standard_B2ats_v2", subnet = "private" }
+    db  = { tier = "db", size = "Standard_B2ats_v2", subnet = "private" }
   }
 }
