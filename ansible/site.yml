@@ -1,0 +1,30 @@
+---
+- name: Baseline and monitoring on every VM
+  hosts: all
+  become: true
+  roles:
+    - role: common
+      tags: [common]
+    - role: node_exporter
+      tags: [monitoring]
+
+- name: Data tier
+  hosts: db
+  become: true
+  roles:
+    - role: postgres
+      tags: [db]
+
+- name: App tier
+  hosts: app
+  become: true
+  roles:
+    - role: app
+      tags: [app]
+
+- name: Web tier
+  hosts: web
+  become: true
+  roles:
+    - role: nginx_web
+      tags: [web]

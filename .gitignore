@@ -1,0 +1,26 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+tfplan
+crash.log
+
+# Secrets and keys (the Ansible vault.yml is committed only when encrypted)
+.vault_pass*
+*.pem
+*.key
+id_*
+.env
+
+# Generated
+ansible/inventory/hosts.yml
+
+# Python / tooling
+__pycache__/
+.pytest_cache/
+.venv/
+*.db
+instance/
+.ansible/

@@ -1,0 +1,79 @@
+---
+- name: Install PostgreSQL
+  ansible.builtin.apt:
+    name: postgresql
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Listen on the private interface
+  ansible.builtin.copy:
+    dest: "/etc/postgresql/{{ postgres_version }}/main/conf.d/10-listen.conf"
+    owner: postgres
+    group: postgres
+    mode: "0644"
+    content: |
+      # Managed by Ansible
+      listen_addresses = 'localhost,{{ private_ip }}'
+  notify: Restart postgresql
+
+- name: Allow the private subnet to connect with a password
+  ansible.builtin.lineinfile:
+    path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    line: "host {{ db_name }} {{ db_user }} {{ private_subnet_cidr }} scram-sha-256"
+    regexp: '^host\s+{{ db_name }}\s+{{ db_user }}\s'
+  notify: Restart postgresql
+
+- name: Apply configuration changes now
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure PostgreSQL is running
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Check whether the application role exists
+  ansible.builtin.command:
+    argv:
+      - psql
+      - -tAc
+      - "SELECT 1 FROM pg_roles WHERE rolname = '{{ db_user }}'"
+  become: true
+  become_user: postgres
+  register: postgres_role_check
+  changed_when: false
+
+- name: Create the application role
+  ansible.builtin.command:
+    argv:
+      - psql
+      - -c
+      - "CREATE ROLE {{ db_user }} LOGIN PASSWORD '{{ db_password }}'"
+  become: true
+  become_user: postgres
+  when: postgres_role_check.stdout | trim != '1'
+  no_log: true
+  changed_when: true
+
+- name: Check whether the database exists
+  ansible.builtin.command:
+    argv:
+      - psql
+      - -tAc
+      - "SELECT 1 FROM pg_database WHERE datname = '{{ db_name }}'"
+  become: true
+  become_user: postgres
+  register: postgres_db_check
+  changed_when: false
+
+- name: Create the database
+  ansible.builtin.command:
+    argv:
+      - psql
+      - -c
+      - "CREATE DATABASE {{ db_name }} OWNER {{ db_user }}"
+  become: true
+  become_user: postgres
+  when: postgres_db_check.stdout | trim != '1'
+  changed_when: true

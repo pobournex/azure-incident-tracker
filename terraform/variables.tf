@@ -1,0 +1,73 @@
+variable "subscription_id" {
+  description = "Azure subscription ID to deploy into."
+  type        = string
+}
+
+variable "location" {
+  description = "Azure region. Pick one where Standard_B1s is available to you."
+  type        = string
+  default     = "centralus"
+}
+
+variable "environment" {
+  description = "Environment tag and name suffix."
+  type        = string
+  default     = "demo"
+}
+
+variable "allowed_ssh_cidr" {
+  description = "Your public IP in CIDR form (for example 203.0.113.7/32). SSH is only allowed from here."
+  type        = string
+
+  validation {
+    condition     = can(cidrhost(var.allowed_ssh_cidr, 0)) && var.allowed_ssh_cidr != "0.0.0.0/0"
+    error_message = "allowed_ssh_cidr must be a valid CIDR and must not be 0.0.0.0/0."
+  }
+}
+
+variable "admin_username" {
+  description = "Admin user created on every VM."
+  type        = string
+  default     = "azureuser"
+}
+
+variable "admin_ssh_public_key" {
+  description = "SSH public key installed for the admin user. Password login is disabled."
+  type        = string
+}
+
+variable "shutdown_time" {
+  description = "Daily auto-shutdown time in HHMM (24h) in shutdown_timezone. Stops compute billing overnight."
+  type        = string
+  default     = "2300"
+}
+
+variable "shutdown_timezone" {
+  description = "Windows-style timezone name for the shutdown schedule."
+  type        = string
+  default     = "Central Standard Time"
+}
+
+variable "public_ip_for_private_tier" {
+  description = <<-EOT
+    Give the app and db VMs a public IP (inbound still blocked by NSG except SSH from allowed_ssh_cidr).
+    Needed for apt/pip because new VNets may not provide default outbound internet access.
+    The production alternative is a NAT gateway, which costs far more than this lab needs.
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "vms" {
+  description = "VMs to create, keyed by name. 'subnet' is 'web' or 'private'."
+  type = map(object({
+    tier   = string
+    size   = string
+    subnet = string
+  }))
+  default = {
+    web = { tier = "web", size = "Standard_B1s", subnet = "web" }
+    app = { tier = "app", size = "Standard_B1s", subnet = "private" }
+    db  = { tier = "db", size = "Standard_B1s", subnet = "private" }
+  }
+}

@@ -1,0 +1,67 @@
+---
+- name: Install Python tooling
+  ansible.builtin.apt:
+    name: [python3-venv, python3-pip]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create the application user
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Create the application directory
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0755"
+
+- name: Copy the application code
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../app/"
+    dest: "{{ app_dir }}/app/"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: preserve
+  notify: Restart incident-tracker
+
+- name: Install Python dependencies into a virtualenv
+  ansible.builtin.pip:
+    requirements: "{{ app_dir }}/app/requirements.txt"
+    virtualenv: "{{ app_dir }}/venv"
+    virtualenv_command: python3 -m venv
+  become: true
+  become_user: "{{ app_user }}"
+  notify: Restart incident-tracker
+
+- name: Write the environment file (holds the database password)
+  ansible.builtin.template:
+    src: app.env.j2
+    dest: "{{ app_env_file }}"
+    owner: root
+    group: "{{ app_user }}"
+    mode: "0640"
+  no_log: true
+  notify: Restart incident-tracker
+
+- name: Install the systemd unit
+  ansible.builtin.template:
+    src: incident-tracker.service.j2
+    dest: /etc/systemd/system/incident-tracker.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart incident-tracker
+
+- name: Enable and start the application
+  ansible.builtin.service:
+    name: incident-tracker
+    state: started
+    enabled: true

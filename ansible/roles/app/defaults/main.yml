@@ -1,0 +1,6 @@
+---
+app_user: incident
+app_dir: /opt/incident-tracker
+app_env_file: /etc/incident-tracker.env
+db_name: incidents
+db_user: incidents

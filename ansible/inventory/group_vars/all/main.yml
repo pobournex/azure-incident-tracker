@@ -1,0 +1,14 @@
+---
+app_user: incident
+app_dir: /opt/incident-tracker
+app_env_file: /etc/incident-tracker.env
+
+db_name: incidents
+db_user: incidents
+db_password: "{{ vault_db_password }}"
+postgres_version: 14
+
+# Tier addresses come from the generated inventory (private_ip host var).
+db_host: "{{ hostvars[groups['db'][0]].private_ip }}"
+app_backend_host: "{{ hostvars[groups['app'][0]].private_ip }}"
+private_subnet_cidr: 10.20.2.0/24

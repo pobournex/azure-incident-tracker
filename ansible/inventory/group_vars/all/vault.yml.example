@@ -1,0 +1,4 @@
+---
+# Copy to vault.yml, set a password (letters and digits only, it is placed in a SQL statement), then encrypt:
+#   ansible-vault encrypt ansible/inventory/group_vars/all/vault.yml
+vault_db_password: "ChangeMe123"

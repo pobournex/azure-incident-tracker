@@ -1,0 +1,9 @@
+---
+profile: production
+exclude_paths:
+  - .github/
+  - terraform/
+skip_list:
+  # Tier-wide variables (db_name, app_backend_host, ...) are shared between roles on purpose
+  # and defined once in inventory/group_vars/all/main.yml.
+  - var-naming[no-role-prefix]

@@ -1,0 +1,5 @@
+---
+postgres_version: 14
+db_name: incidents
+db_user: incidents
+private_subnet_cidr: 10.20.2.0/24

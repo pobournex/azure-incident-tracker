@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  author: homelab
+  description: PostgreSQL for the incident tracker data tier
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions: [jammy]
+dependencies: []

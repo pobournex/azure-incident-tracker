@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Incident Tracker</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; color: #1f2933; }
+    h1 { font-size: 1.4rem; }
+    form { display: flex; gap: .5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    input, select, button { padding: .5rem; font-size: 1rem; }
+    input { flex: 1; min-width: 200px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .5rem; border-bottom: 1px solid #d9e2ec; }
+    .sev { font-weight: 600; }
+    .SEV1 { color: #b42318; } .SEV2 { color: #c4620a; } .SEV3 { color: #8a6d00; } .SEV4 { color: #475467; }
+    #error { color: #b42318; min-height: 1.2rem; }
+  </style>
+</head>
+<body>
+  <h1>Incident Tracker</h1>
+  <form id="new">
+    <input id="title" placeholder="What's broken?" maxlength="200" required>
+    <select id="severity">
+      <option>SEV1</option><option>SEV2</option><option selected>SEV3</option><option>SEV4</option>
+    </select>
+    <button type="submit">Log incident</button>
+  </form>
+  <div id="error"></div>
+  <table>
+    <thead><tr><th>ID</th><th>Title</th><th>Severity</th><th>Status</th><th>Created</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <script>
+    const rows = document.getElementById("rows");
+    const errorBox = document.getElementById("error");
+
+    function cell(text, className) {
+      const td = document.createElement("td");
+      td.textContent = text;
+      if (className) td.className = className;
+      return td;
+    }
+
+    async function load() {
+      const res = await fetch("/api/incidents");
+      const data = await res.json();
+      rows.replaceChildren();
+      for (const i of data) {
+        const tr = document.createElement("tr");
+        tr.append(cell(i.id), cell(i.title), cell(i.severity, "sev " + i.severity));
+        const statusTd = document.createElement("td");
+        const sel = document.createElement("select");
+        for (const s of ["open", "investigating", "resolved"]) {
+          const o = document.createElement("option");
+          o.value = o.textContent = s;
+          o.selected = s === i.status;
+          sel.append(o);
+        }
+        sel.addEventListener("change", async () => {
+          await fetch("/api/incidents/" + i.id, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: sel.value }),
+          });
+        });
+        statusTd.append(sel);
+        tr.append(statusTd, cell(new Date(i.created_at).toLocaleString()));
+        rows.append(tr);
+      }
+    }
+
+    document.getElementById("new").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.textContent = "";
+      const res = await fetch("/api/incidents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: document.getElementById("title").value,
+          severity: document.getElementById("severity").value,
+        }),
+      });
+      if (!res.ok) {
+        errorBox.textContent = (await res.json()).error;
+        return;
+      }
+      e.target.reset();
+      load();
+    });
+
+    load();
+  </script>
+</body>
+</html>
