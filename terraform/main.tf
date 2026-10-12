@@ -154,3 +154,5 @@ resource "azurerm_subnet_network_security_group_association" "private" {
   subnet_id                 = azurerm_subnet.tier["private"].id
   network_security_group_id = azurerm_network_security_group.private.id
 }
+
+# trigger first plan
