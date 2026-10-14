@@ -89,7 +89,11 @@ Three small VMs, three Standard public IPs and three small disks. Approximate li
 
 This stack was applied to a real Azure subscription, deployed, tested and destroyed. Evidence from that run:
 
-**Infrastructure applied by the pipeline** (keyless OIDC login, 15 resources):
+**Terraform plan** from the pipeline: 20 resources to add, nothing to change or destroy, reviewed before any apply:
+
+![Terraform plan](docs/screenshots/01-plan.png)
+
+**Infrastructure applied by the pipeline** (keyless OIDC login; 20 Terraform resources, 15 of which show up as portal resources):
 
 ![Terraform apply](docs/screenshots/03-apply.png)
 
