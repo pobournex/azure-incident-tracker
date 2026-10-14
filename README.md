@@ -89,6 +89,10 @@ Three small VMs, three Standard public IPs and three small disks. Approximate li
 
 This stack was applied to a real Azure subscription, deployed, tested and destroyed. Evidence from that run:
 
+**Keyless authentication:** the Entra app registration trusts GitHub through 5 federated credentials (main branch, pull requests and three environments). There are no client secrets and no certificates:
+
+![Federated credentials](docs/screenshots/02-federated-credentials.png)
+
 **Terraform plan** from the pipeline: 20 resources to add, nothing to change or destroy, reviewed before any apply:
 
 ![Terraform plan](docs/screenshots/01-plan.png)
